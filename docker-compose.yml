@@ -1,21 +1,28 @@
+version: '3.8'
+
 services:
+  # 1. 地图引擎容器
   tileserver:
     image: ghcr.io/maplibre/martin:1.4.0
     container_name: map_martin
     restart: always
     volumes:
       - ./map_data/tiles:/tiles:ro
-    # 【改动在这里】最新版直接传目录路径，不再需要 --dir
     command: ["/tiles"]
-    expose:
-      - "3000"
+    # 【关键点】原本在 nginx 上的 8080 端口现在必须定义在这里
+    # 因为 nginx 共享了 tileserver 的网络，它们共用这些端口映射
+    ports:
+      - "8080:80"   # 映射宿主机 8080 到容器内的 Nginx(80)
+      - "3000:3000" # 如果你想直接访问 Martin，也可以暴露 3000
 
+  # 2. 代理/认证容器
   nginx:
     image: nginx:alpine
     container_name: map_nginx
     restart: always
-    ports:
-      - "8080:80"
+    # 【核心改动】让 Nginx 使用 tileserver 的网络栈
+    # 这样在 nginx.conf 里 proxy_pass http://127.0.0.1:3000 就能通了
+    network_mode: "service:tileserver"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./map_data/www:/usr/share/nginx/html:ro
