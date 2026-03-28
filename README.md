@@ -24,6 +24,15 @@ docker run --rm `
   --nodemap-type=sparsearray `
   --storage=mmap
 
+docker run --rm `
+  -e JAVA_TOOL_OPTIONS="-Xmx12g -XX:+UseParallelGC" `
+  -v "${PWD}:/data" `
+  ghcr.io/onthegomap/planetiler:latest `
+  --osm-path=/data/raw/china-latest.osm.pbf,/data/raw/spain-latest.osm.pbf `
+  --output=/data/tiles/combined.pmtiles `
+  --threads=$(nproc) `
+  --nodemap-type=sparsearray `
+  --storage=mmap
 
 net stop winnat
 docker-compose up -d

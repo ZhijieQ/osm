@@ -1,6 +1,6 @@
 services:
   tileserver:
-    image: maplibre/martin:latest
+    image: ghcr.io/maplibre/martin:1.4.0
     container_name: map_martin
     restart: always
     volumes:
@@ -18,5 +18,7 @@ services:
       - "8080:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./map_data/www:/usr/share/nginx/html:ro
+      - ./map_data/fonts:/usr/share/nginx/fonts:ro
     depends_on:
       - tileserver
