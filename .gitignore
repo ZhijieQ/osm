@@ -208,6 +208,14 @@ __marimo__/
 
 
 map_data/*
+
 !map_data/raw/
 map_data/raw/*
 !map_data/raw/.keep
+
+!map_data/styles/
+!map_data/sprites/
+
+!map_data/fonts/
+map_data/fonts/*
+!map_data/fonts/v2.0.zip
