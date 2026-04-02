@@ -1,31 +1,36 @@
 version: '3.8'
 
 services:
-  # 1. 地图引擎容器
+  # 1. 地图引擎容器 (Martin)
   tileserver:
     image: ghcr.io/maplibre/martin:1.4.0
     container_name: map_martin
     restart: always
     volumes:
-      - ./map_data/tiles:/tiles:ro
+      # 映射本地 map_data 目录到容器
+      - ./map_data:/tiles:ro
+    # 修正：Martin 启动参数指向挂载的目录
     command: ["/tiles"]
-    # 【关键点】原本在 nginx 上的 8080 端口现在必须定义在这里
-    # 因为 nginx 共享了 tileserver 的网络，它们共用这些端口映射
     ports:
-      - "8080:80"   # 映射宿主机 8080 到容器内的 Nginx(80)
-      - "3000:3000" # 如果你想直接访问 Martin，也可以暴露 3000
+      - "8080:80"    # 宿主机 8080 访问 Nginx
+      - "3000:3000"  # 宿主机 3000 直接访问 Martin
 
-  # 2. 代理/认证容器
+  # 2. 代理/认证容器 (Nginx)
   nginx:
-    image: nginx:alpine
+    # 建议使用你 build 的那个镜像，或者标准的 nginx:alpine
+    image: nginx:alpine 
     container_name: map_nginx
     restart: always
-    # 【核心改动】让 Nginx 使用 tileserver 的网络栈
-    # 这样在 nginx.conf 里 proxy_pass http://127.0.0.1:3000 就能通了
+    # 使用 tileserver 的网络，确保 127.0.0.1:3000 能访问到 Martin
     network_mode: "service:tileserver"
     volumes:
+      # 挂载配置文件（注意：alpine 默认读取 /etc/nginx/conf.d/default.conf）
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./map_data/www:/usr/share/nginx/html:ro
-      - ./map_data/fonts:/usr/share/nginx/fonts:ro
+      
+      # 【关键：对齐 K8s 路径】
+      # 将本地整个 map_data 文件夹挂载到 /usr/share/nginx/data
+      # 这样你在 nginx.conf 里写的 /usr/share/nginx/data/fonts 等路径在本地也能通
+      - ./map_data:/usr/share/nginx/data:ro
+      
     depends_on:
       - tileserver
