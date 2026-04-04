@@ -23,8 +23,11 @@ services:
     network_mode: "service:tileserver" # 加入 Martin 的网络空间 (localhost 共享)
     volumes:
       - ./map_data/photon_data:/photon/photon_data
-    environment:
-      - JAVA_OPTS=-Xmx4g -Xms4g
+    command: [
+      "java", "-Xmx4g", "-Xms4g",
+      "-jar", "/photon/photon.jar",
+      "-listen-ip", "0.0.0.0"
+    ]
   
   # 代理/认证容器 (Nginx)
   nginx:
