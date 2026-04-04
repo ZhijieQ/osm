@@ -96,7 +96,7 @@ docker run -d `
   -p 2322:2322 `
   -v "${PWD}/photon_data:/photon/photon_data" `
   rtuszik/photon-docker:latest `
-  java -Xmx4g -jar /photon/photon.jar
+  java -Xmx4g -jar /photon/photon.jar -listen-ip 0.0.0.0
 ```
 
 ## Another form
