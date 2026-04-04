@@ -14,8 +14,19 @@ services:
     ports:
       - "8080:80"    # 宿主机 8080 访问 Nginx
       - "3000:3000"  # 宿主机 3000 直接访问 Martin
+      - "2322:2322"  # 宿主机 2322 访问 photon 的调试端口
 
-  # 2. 代理/认证容器 (Nginx)
+  photon:
+    image: rtuszik/photon-docker:latest
+    container_name: map_photon
+    restart: always
+    network_mode: "service:tileserver" # 加入 Martin 的网络空间 (localhost 共享)
+    volumes:
+      - ./map_data/photon_data:/photon/photon_data
+    environment:
+      - JAVA_OPTS=-Xmx4g -Xms4g
+  
+  # 代理/认证容器 (Nginx)
   nginx:
     # 建议使用你 build 的那个镜像，或者标准的 nginx:alpine
     image: nginx:alpine 
