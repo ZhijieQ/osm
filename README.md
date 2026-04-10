@@ -112,6 +112,7 @@ https://busmaps.com/es/spain/feedlist
 - valhalla.json
 - admins.sqlite
 - timezones.sqlite
+- default_speeds.json
 ```bash
 cd map_data
 mkdir valhalla_data
