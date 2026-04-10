@@ -30,6 +30,7 @@ processors=4 # 顺便可以设置 CPU 核心数
 - https://github.com/openmaptiles/positron-gl-style/tree/master?tab=readme-ov-file
 - https://github.com/jake-low/sourdough
 
+### Martin
 ```bash
 cd map_data
 
@@ -59,6 +60,11 @@ docker run --rm `
 net stop winnat
 docker-compose up -d
 net start winnat
+```
+
+### Photon
+```bash
+cd map_data
 
 # Nominatim
 # 启动 Nominatim 进行导入
@@ -77,7 +83,7 @@ docker run -t `
 docker run -t `
   --name photon_import `
   --link nominatim:nominatim `
-  -v "${PWD}/photon_data:/photon/photon_data" `
+  -v "${PWD}/photon:/photon/photon" `
   rtuszik/photon-docker:latest `
   java -Xmx8g -jar /photon/photon.jar `
     -nominatim-import `
@@ -94,9 +100,42 @@ docker start nominatim
 docker run -d `
   --name photon_service `
   -p 2322:2322 `
-  -v "${PWD}/photon_data:/photon/photon_data" `
+  -v "${PWD}/photon:/photon/photon" `
   rtuszik/photon-docker:latest `
   java -Xmx4g -jar /photon/photon.jar -listen-ip 0.0.0.0
+```
+
+### Valhalla
+https://busmaps.com/es/spain/feedlist
+只需要以下文件
+- valhalla_tiles.tar
+- valhalla.json
+- admins.sqlite
+- timezones.sqlite
+```bash
+cd map_data
+mkdir valhalla_data
+cp .\raw\merged.osm.pbf .\valhalla_data\ 
+
+docker run --rm `
+  -v "${PWD}/valhalla_data:/custom_files" `
+  -e "build_threads=12" `
+  -e "files=/custom_files/merged.osm.pbf" `
+  -e "build_elevation=True" `
+  -e "build_transit=True" `
+  -e "build_admins=True" `
+  -e "build_time_zones=True" `
+  ghcr.io/valhalla/valhalla-scripted:latest
+
+# 本地测试
+docker run -d `
+  --name valhalla_service `
+  -p 8002:8002 `
+  -v "${PWD}/valhalla_data:/custom_files" `
+  -e "use_tiles_ignore_pbf=True" `
+  -e "force_rebuild=False" `
+  -e "server_config=/custom_files/valhalla.json" `
+  ghcr.io/valhalla/valhalla-scripted:latest
 ```
 
 ## Another form

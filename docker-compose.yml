@@ -13,9 +13,11 @@ services:
     command: ["/tiles"]
     ports:
       - "8080:80"    # 宿主机 8080 访问 Nginx
-      - "3000:3000"  # 宿主机 3000 直接访问 Martin
-      - "2322:2322"  # 宿主机 2322 访问 photon 的调试端口
+      - "3000:3000"  # Martin 直接访问
+      - "2322:2322"  # Photon 直接访问
+      - "8002:8002"  # Valhalla 直接访问
 
+  # 2. 地理编码引擎 (Photon)
   photon:
     image: rtuszik/photon-docker:latest
     container_name: map_photon
@@ -29,7 +31,28 @@ services:
       "-listen-ip", "0.0.0.0"
     ]
   
-  # 代理/认证容器 (Nginx)
+  # 3. 路由引擎 (Valhalla) - 新增
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:latest
+    container_name: map_valhalla
+    restart: always
+    network_mode: "service:tileserver" # 共享 localhost
+    volumes:
+      # 挂载你在高性能机器上构建好的成果目录
+      - ./map_data/valhalla_data:/custom_files:ro
+    environment:
+      # 生产环境模式：忽略 PBF，直接加载 tiles
+      - use_tiles_ignore_pbf=True
+      - force_rebuild=False
+      - server_config=/custom_files/valhalla.json
+    # 这里的健康检查可以确保 Nginx 在 Valhalla 加载完瓦片后再完全工作
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/route?json={\"locations\":[{\"lat\":0,\"lon\":0}]}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
+  # 4. 代理/反向代理 (Nginx)
   nginx:
     # 建议使用你 build 的那个镜像，或者标准的 nginx:alpine
     image: nginx:alpine 
@@ -48,3 +71,5 @@ services:
       
     depends_on:
       - tileserver
+      - photon
+      - valhalla
